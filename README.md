@@ -62,6 +62,7 @@ Gymbro is a console-based AI fitness coach that runs fully locally using an Olla
 Gymbro can be tuned via environment variables (useful for balancing speed vs. completeness):
 
 - `GYMBRO_MODEL` (default: `llama3.2`)
+- `GYMBRO_NATIVE_TOOL_CALLING` (default: `0`) — enable LLM-decided tool calling when supported; otherwise the app falls back to intent/keyword routing
 - `GYMBRO_TEMPERATURE` (default: `0.4`)
 - `GYMBRO_NUM_PREDICT` (default: `96`) — max tokens generated per response
 - `GYMBRO_NUM_CTX` (default: `1024`) — context window size sent to the model
@@ -70,9 +71,28 @@ Gymbro can be tuned via environment variables (useful for balancing speed vs. co
 Example (PowerShell):
 ```powershell
 $env:GYMBRO_MODEL="llama3.2:3b"
+$env:GYMBRO_NATIVE_TOOL_CALLING="1"
 $env:GYMBRO_MAX_CONTEXT_MESSAGES="12"
 $env:GYMBRO_NUM_CTX="2048"
 $env:GYMBRO_NUM_PREDICT="400"
+python app.py
+```
+
+### Switching to a different Ollama model
+
+1. Pull the model:
+```bash
+ollama pull <model-name>
+```
+
+2. Verify it is installed:
+```bash
+ollama list
+```
+
+3. Run Gymbro with the model:
+```powershell
+$env:GYMBRO_MODEL="<model-name>"
 python app.py
 ```
 
