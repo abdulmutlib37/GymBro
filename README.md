@@ -1,79 +1,129 @@
-# Gymbro - AI Fitness Coach
+# Gymbro (Console) — Local AI Fitness Coach
 
-Gymbro is an AI-powered fitness coach console application that provides personalized workout plans, progress tracking, and fitness guidance using a local LLM via Ollama.
+Gymbro is a console-based AI fitness coach that runs fully locally using an Ollama-hosted LLM and a LangGraph agent. It supports free-form fitness chat with short-term conversational context and can generate two artifacts:
+
+- A workout plan exported to a text file
+- A progress report exported to a CSV file
 
 ## Features
 
-- 🤖 **AI-Powered Coaching**: Conversational AI fitness coach powered by Ollama's llama3 model
-- 💪 **Personalized Workout Plans**: Generate customized 3-day workout plans based on your fitness level and goals
-- 📊 **Progress Tracking**: Generate CSV reports to track your exercise progress over time
-- 🧠 **Memory & Context**: The agent remembers your fitness level and goals throughout the conversation
-- 🔧 **Tool Routing**: Intelligent tool selection based on conversation context
-- 🏠 **Fully Local**: No cloud APIs or external services required - everything runs locally
+- **Local LLM via Ollama**: No cloud APIs.
+- **Conversational coaching**: Fitness-centric guidance with session memory.
+- **Workout plan export**: Writes `outputs/workout_plan.txt`.
+- **Progress report export**: Writes `outputs/progress_report.csv`.
+- **Tool routing**: Selects between chat vs. tools based on user intent.
 
 ## Prerequisites
 
-1. **Python 3.8+** installed on your system
-2. **Ollama** installed and running with a tool-capable model (recommended: `llama3.2`)
+- **Python 3.8+**
+- **Ollama** installed and running
+- An Ollama model available locally (recommended: `llama3.2` or `llama3.2:3b`)
 
 ### Installing Ollama
 
-1. Download Ollama from [https://ollama.ai](https://ollama.ai)
-2. Install Ollama according to your operating system
-3. Pull a model that supports tool calling (required for this app):
-   ```bash
-   ollama pull llama3.2
-   ```
-   **Important:** The base `llama3` model does NOT support tool calling. You need `llama3.2` or `llama3.1` for this application to work.
+1. Download Ollama from https://ollama.ai
+2. Install Ollama for your OS and start the Ollama service
+3. Pull a model:
+    ```bash
+    ollama pull llama3.2
+    ```
+    Optional smaller/faster model:
+    ```bash
+    ollama pull llama3.2:3b
+    ```
 
 ## Installation
 
-1. Clone or download this repository
-2. Navigate to the project directory:
-   ```bash
-   cd Gymbro
-   ```
-
-3. Create a virtual environment (recommended):
-   ```bash
-   python -m venv venv
-   ```
-
-4. Activate the virtual environment:
-   - **Windows:**
-     ```bash
-     venv\Scripts\activate
-     ```
-   - **macOS/Linux:**
-     ```bash
-     source venv/bin/activate
-     ```
-
-5. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+1. Clone or download this repository.
+2. Create and activate a virtual environment (recommended).
+3. Install dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
 
 ## Usage
 
-1. Make sure Ollama is running and a tool-capable model is available:
-   ```bash
-   ollama list
-   ```
-   You should see `llama3.2` (or `llama3.1`) in the list.
+1. Confirm Ollama is running and the model is available:
+    ```bash
+    ollama list
+    ```
+2. Run the app:
+    ```bash
+    python app.py
+    ```
+3. Example prompts:
+    - `I'm a beginner and want to build muscle.`
+    - `Create a workout plan for me.`
+    - `Generate a progress report.`
+4. Type `exit` to quit.
 
-2. Run the application:
-   ```bash
-   python app.py
-   ```
+## Configuration
 
-3. Start chatting with your AI fitness coach! Here are some example interactions:
-   - "I'm a beginner and want to build muscle"
-   - "Can you create a workout plan for me?"
-   - "Show me my progress report"
-   - "I want to lose weight"
+Gymbro can be tuned via environment variables (useful for balancing speed vs. completeness):
 
-4. Type `exit` to quit the application.
+- `GYMBRO_MODEL` (default: `llama3.2`)
+- `GYMBRO_TEMPERATURE` (default: `0.4`)
+- `GYMBRO_NUM_PREDICT` (default: `96`) — max tokens generated per response
+- `GYMBRO_NUM_CTX` (default: `1024`) — context window size sent to the model
+- `GYMBRO_MAX_CONTEXT_MESSAGES` (default: `6`) — number of recent messages sent each turn
+
+Example (PowerShell):
+```powershell
+$env:GYMBRO_MODEL="llama3.2:3b"
+$env:GYMBRO_MAX_CONTEXT_MESSAGES="12"
+$env:GYMBRO_NUM_CTX="2048"
+$env:GYMBRO_NUM_PREDICT="400"
+python app.py
+```
+
+### Increase context size, output size, and memory/history
+
+Gymbro’s effective “memory” is controlled by:
+
+- `GYMBRO_MAX_CONTEXT_MESSAGES`: how many recent messages are sent to the model each turn
+- `GYMBRO_NUM_CTX`: how large the model context window is (token budget for prompt + history)
+
+Output length is controlled by:
+
+- `GYMBRO_NUM_PREDICT`: maximum tokens the model can generate before it stops
+
+PowerShell examples:
+
+**More memory/history (remember more of the conversation):**
+```powershell
+$env:GYMBRO_MAX_CONTEXT_MESSAGES="16"
+python app.py
+```
+
+**Larger context window (fit more text/history per turn):**
+```powershell
+$env:GYMBRO_NUM_CTX="4096"
+python app.py
+```
+
+**Longer answers (reduce “cut off” responses):**
+```powershell
+$env:GYMBRO_NUM_PREDICT="600"
+python app.py
+```
+
+**Detailed profile (slower, but more complete):**
+```powershell
+$env:GYMBRO_MODEL="llama3.2:3b"
+$env:GYMBRO_MAX_CONTEXT_MESSAGES="16"
+$env:GYMBRO_NUM_CTX="4096"
+$env:GYMBRO_NUM_PREDICT="600"
+python app.py
+```
+
+**Fast profile (quicker, but shorter answers and less history):**
+```powershell
+$env:GYMBRO_MODEL="llama3.2:3b"
+$env:GYMBRO_MAX_CONTEXT_MESSAGES="6"
+$env:GYMBRO_NUM_CTX="1024"
+$env:GYMBRO_NUM_PREDICT="128"
+python app.py
+```
 
 ## Project Structure
 
@@ -98,24 +148,16 @@ Gymbro/
 
 ## How It Works
 
-1. **Agent Framework**: Uses LangGraph to manage conversation flow, memory, and tool routing
-2. **LLM Integration**: Connects to Ollama's local llama3 model for natural language understanding
-3. **State Management**: Tracks conversation history, fitness level, and goals throughout the session
-4. **Tool Execution**: The agent intelligently decides when to use tools based on conversation context:
-   - `generate_workout_plan`: Creates personalized workout plans
-   - `generate_progress_report`: Generates CSV reports with exercise data
-5. **Memory**: Conversation context is maintained using LangGraph's memory checkpointing
+1. **Agent orchestration (LangGraph)**: Controls the flow between chat and tool execution.
+2. **Local LLM (Ollama)**: The app calls Ollama's `/api/chat` endpoint.
+3. **Session memory**: Recent messages plus extracted `fitness_level` and `fitness_goals` are included in the prompt each turn.
+4. **Tool routing**: In the current implementation, tool usage is selected via simple intent/keyword routing (for reliability with local models).
 
 ## Example Workflow
 
 ```
 You: I'm a beginner and want to lose weight
-Gymbro: Great! I'll help you create a workout plan focused on fat loss...
-
-You: Can you create a workout plan for me?
-Gymbro: [Agent invokes generate_workout_plan tool]
-        Workout plan generated successfully and saved to outputs/workout_plan.txt
-
+...
 You: Show me my progress
 Gymbro: [Agent invokes generate_progress_report tool]
         Progress report generated successfully and saved to outputs/progress_report.csv
@@ -123,24 +165,21 @@ Gymbro: [Agent invokes generate_progress_report tool]
 
 ## Output Files
 
-- **workout_plan.txt**: Contains a personalized 3-day workout plan tailored to your fitness level and goals
-- **progress_report.csv**: Contains sample exercise progress data in CSV format for tracking improvements
+- `outputs/workout_plan.txt`: A personalized workout plan.
+- `outputs/progress_report.csv`: A CSV progress report.
 
 ## Troubleshooting
 
-### Ollama Connection Issues
+### Ollama connection issues
 - Ensure Ollama is running: `ollama list`
-- Verify a tool-capable model is installed: `ollama pull llama3.2`
-- Check Ollama is accessible: The default endpoint is `http://localhost:11434`
+- Confirm the service is reachable at `http://localhost:11434`
 
-### Import Errors
-- Make sure all dependencies are installed: `pip install -r requirements.txt`
-- Verify you're using the correct Python version (3.8+)
-- Check that you're in the correct virtual environment
+### Dependency/import errors
+- Reinstall dependencies: `pip install -r requirements.txt`
+- Confirm you are using the intended Python interpreter/venv
 
-### Tool Execution Errors
-- Ensure the `outputs/` directory can be created (check write permissions)
-- Verify file paths are correct
+### Tool output issues
+- Ensure the app can create/write to the `outputs/` directory (permissions)
 
 ## License
 
@@ -149,7 +188,3 @@ This project is provided as-is for educational and personal use.
 ## Contributing
 
 Feel free to submit issues or pull requests if you'd like to improve Gymbro!
-
----
-
-**Stay fit and healthy! 💪**
